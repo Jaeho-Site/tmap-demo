@@ -6,6 +6,13 @@ import { parkColor } from '../data/parkMeta'
 import { STREETS, type Street } from '../data/streets'
 import { treeColor } from '../data/streetMeta'
 import { STREET_ROUTES } from '../data/streetRoutes'
+import { WALKWAYS, type Walkway } from '../data/walkways'
+import { WALKWAY_ROUTES } from '../data/walkwayRoutes'
+
+// 보행자전용도로: 보차분리 여부로 색 구분
+const WALKWAY_SEP = '#2563eb' // 보차분리 O
+const WALKWAY_MIX = '#64748b' // 보차분리 X/미상
+const walkwayColor = (w: Walkway) => (w.separated ? WALKWAY_SEP : WALKWAY_MIX)
 
 const PURPOSE_COLOR: Record<PurposeId, string> = Object.fromEntries(
   PURPOSES.map((p) => [p.id, p.color]),
@@ -41,6 +48,14 @@ function dotDataUrl(color: string): string {
 function diamondDataUrl(color: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
     <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" transform="rotate(45 8 8)" fill="${color}" stroke="#ffffff" stroke-width="2"/>
+  </svg>`
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+}
+
+// 사각 노드 (보행자전용도로용) — 원/마름모와 구분
+function squareDataUrl(color: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15">
+    <rect x="2.5" y="2.5" width="10" height="10" rx="2" fill="${color}" stroke="#ffffff" stroke-width="2"/>
   </svg>`
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
@@ -123,11 +138,42 @@ function streetInfoContent(s: Street, endpoint: '시작' | '종료'): string {
   </div>`
 }
 
+function walkwayInfoContent(w: Walkway, endpoint: '시작' | '종료' | '지점'): string {
+  const color = walkwayColor(w)
+  const route = WALKWAY_ROUTES[w.id]
+  const walk = w.isPoint
+    ? '점형 지점(시작=종료)'
+    : route?.distance != null
+      ? `보행 ${route.distance.toLocaleString()}m${route.time != null ? ` · 약 ${Math.round(route.time / 60)}분` : ''}`
+      : '보행경로 없음(직선 표시)'
+  const facil = [
+    w.cctv > 0 ? `CCTV ${w.cctv}` : null,
+    w.lamp > 0 ? `보안등 ${w.lamp}` : null,
+    w.crosswalk > 0 ? `횡단보도 ${w.crosswalk}` : null,
+    w.braille > 0 ? `점자블록 ${w.braille}` : null,
+  ].filter(Boolean).join(' · ')
+  const meta = [
+    w.width != null ? `보도폭 ${w.width}m` : null,
+    `보차분리 ${w.separated ? 'O' : 'X'}`,
+  ].filter(Boolean).join(' · ')
+  return `<div style="min-width:230px;max-width:290px;padding:12px 14px;font-family:system-ui,sans-serif;line-height:1.45;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <strong style="font-size:14px;color:#111;">${w.name}</strong>
+      <span style="background:${color};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${endpoint}</span>
+    </div>
+    <div style="font-size:12px;color:#374151;">${w.district} ${w.dong} · ${meta}</div>
+    <div style="font-size:11px;color:#2563eb;margin-top:3px;">🚶 ${walk}</div>
+    ${facil ? `<div style="font-size:11px;color:#4b5563;margin-top:2px;">시설: ${facil}</div>` : ''}
+    <div style="margin-top:6px;">${tagChips(w.tags)}</div>
+  </div>`
+}
+
 interface MapViewProps {
   activeLayers: Record<PurposeId, boolean>
   showParks: boolean
   activeCategories: Record<string, boolean>
   showStreets: boolean
+  showWalkways: boolean
   focus?: { lat: number; lng: number } | null
 }
 
@@ -144,12 +190,18 @@ interface StreetEntry {
   endMarker: Tmapv2.Marker
   line: Tmapv2.Polyline
 }
+interface WalkwayEntry {
+  startMarker: Tmapv2.Marker
+  endMarker: Tmapv2.Marker | null
+  line: Tmapv2.Polyline | null
+}
 
 export function MapView({
   activeLayers,
   showParks,
   activeCategories,
   showStreets,
+  showWalkways,
   focus,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -157,6 +209,7 @@ export function MapView({
   const markersRef = useRef<MarkerEntry[]>([])
   const parksRef = useRef<ParkEntry[]>([])
   const streetsRef = useRef<StreetEntry[]>([])
+  const walkwaysRef = useRef<WalkwayEntry[]>([])
   const infoRef = useRef<Tmapv2.InfoWindow | null>(null)
 
   // 지도 1회 생성 + 마커 생성 (보고서 지점 + 465개 공원 노드)
@@ -248,6 +301,45 @@ export function MapView({
       return { startMarker, endMarker, line }
     })
 
+    // 보행자전용도로: 시작·종료 노드(사각) + TMAP 보행경로. 점형(isPoint)은 노드 1개만.
+    walkwaysRef.current = WALKWAYS.map((w) => {
+      const color = walkwayColor(w)
+      const startMarker = new T.Marker({
+        position: new T.LatLng(w.startLat, w.startLng),
+        icon: squareDataUrl(color),
+        iconSize: new T.Size(15, 15),
+        title: w.isPoint ? w.name : `${w.name} (시작)`,
+      })
+      startMarker.addListener('click', () =>
+        openInfo(walkwayInfoContent(w, w.isPoint ? '지점' : '시작'), w.startLat, w.startLng),
+      )
+
+      if (w.isPoint) return { startMarker, endMarker: null, line: null }
+
+      const route = WALKWAY_ROUTES[w.id]
+      const hasRoute = !!route && route.path.length >= 2
+      const path = hasRoute
+        ? route.path.map(([lat, lng]) => new T.LatLng(lat, lng))
+        : [new T.LatLng(w.startLat, w.startLng), new T.LatLng(w.endLat, w.endLng)]
+      const line = new T.Polyline({
+        path,
+        strokeColor: color,
+        strokeWeight: hasRoute ? 5 : 3,
+        strokeOpacity: hasRoute ? 0.9 : 0.45,
+        strokeStyle: hasRoute ? 'solid' : 'dash',
+      })
+      const endMarker = new T.Marker({
+        position: new T.LatLng(w.endLat, w.endLng),
+        icon: squareDataUrl(color),
+        iconSize: new T.Size(15, 15),
+        title: `${w.name} (종료)`,
+      })
+      endMarker.addListener('click', () =>
+        openInfo(walkwayInfoContent(w, '종료'), w.endLat, w.endLng),
+      )
+      return { startMarker, endMarker, line }
+    })
+
     return () => {
       infoRef.current?.setMap(null)
       markersRef.current.forEach((m) => m.marker.setMap(null))
@@ -257,9 +349,15 @@ export function MapView({
         s.endMarker.setMap(null)
         s.line.setMap(null)
       })
+      walkwaysRef.current.forEach((w) => {
+        w.startMarker.setMap(null)
+        w.endMarker?.setMap(null)
+        w.line?.setMap(null)
+      })
       markersRef.current = []
       parksRef.current = []
       streetsRef.current = []
+      walkwaysRef.current = []
       map.destroy?.()
       mapRef.current = null
     }
@@ -295,6 +393,18 @@ export function MapView({
       line.setMap(m)
     })
   }, [showStreets])
+
+  // 보행자전용도로 토글
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    walkwaysRef.current.forEach(({ startMarker, endMarker, line }) => {
+      const m = showWalkways ? map : null
+      startMarker.setMap(m)
+      endMarker?.setMap(m)
+      line?.setMap(m)
+    })
+  }, [showWalkways])
 
   // 특정 좌표로 이동
   useEffect(() => {

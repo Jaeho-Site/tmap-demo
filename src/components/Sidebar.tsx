@@ -8,6 +8,13 @@ import {
 } from '../data/daejeonData'
 import { PARK_CATEGORY_COUNTS, PARK_TOTAL, parkColor } from '../data/parkMeta'
 import { STREET_TOTAL, STREET_TOTAL_LENGTH, STREET_TREE_LEGEND } from '../data/streetMeta'
+import {
+  WALKWAY_TOTAL,
+  WALKWAY_LINE_COUNT,
+  WALKWAY_POINT_COUNT,
+  WALKWAY_SEPARATED_COUNT,
+  WALKWAY_LEGEND,
+} from '../data/walkwayMeta'
 
 interface SidebarProps {
   activeLayers: Record<PurposeId, boolean>
@@ -19,6 +26,8 @@ interface SidebarProps {
   onToggleCategory: (category: string) => void
   showStreets: boolean
   onToggleStreets: () => void
+  showWalkways: boolean
+  onToggleWalkways: () => void
 }
 
 export function Sidebar({
@@ -31,6 +40,8 @@ export function Sidebar({
   onToggleCategory,
   showStreets,
   onToggleStreets,
+  showWalkways,
+  onToggleWalkways,
 }: SidebarProps) {
   return (
     <aside className="sidebar">
@@ -111,6 +122,28 @@ export function Sidebar({
         </p>
         <div className="chip-list">
           {STREET_TREE_LEGEND.map((t) => (
+            <span key={t.label} className="chip on static" style={{ '--chip': t.color } as CSSProperties}>
+              <i />
+              {t.label}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="park-head">
+          <h2>🚶 보행자전용도로 ({WALKWAY_TOTAL})</h2>
+          <label className="park-master">
+            <input type="checkbox" checked={showWalkways} onChange={onToggleWalkways} />
+            <span>보행로 표시</span>
+          </label>
+        </div>
+        <p className="foot" style={{ marginTop: 0, marginBottom: 10 }}>
+          시작·종료(■) 노드 · 둘 사이는 <b>TMAP 보행자 경로</b>로 연결 · 선형 {WALKWAY_LINE_COUNT}
+          {WALKWAY_POINT_COUNT > 0 ? ` · 점형 ${WALKWAY_POINT_COUNT}` : ''} · 보차분리 {WALKWAY_SEPARATED_COUNT}
+        </p>
+        <div className="chip-list">
+          {WALKWAY_LEGEND.map((t) => (
             <span key={t.label} className="chip on static" style={{ '--chip': t.color } as CSSProperties}>
               <i />
               {t.label}

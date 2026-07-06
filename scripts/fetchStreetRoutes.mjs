@@ -10,7 +10,10 @@ const STREETS_TS = join(__dirname, '..', 'src', 'data', 'streets.ts')
 const OUT = join(__dirname, '..', 'src', 'data', 'streetRoutes.ts')
 const CACHE = join(__dirname, '.route-cache.json')
 
-const APP_KEY = 'QrqfJJm26I5kWsKHlI4mA7IX77yOQJ8FasRSmVCL'
+// .env 의 VITE_TMAP_APP_KEY 를 로드 (커밋되지 않음, .env.example 참고)
+process.loadEnvFile(join(__dirname, '..', '.env'))
+const APP_KEY = process.env.VITE_TMAP_APP_KEY
+if (!APP_KEY) throw new Error('VITE_TMAP_APP_KEY 가 .env 에 없습니다. .env.example 참고.')
 const ENDPOINT = 'https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json'
 const DELAY_MS = 130 // 호출 간 간격 (rate limit 여유)
 

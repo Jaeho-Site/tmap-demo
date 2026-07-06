@@ -1,5 +1,5 @@
 // 자동 생성 파일 — 수정 금지. 재생성: node scripts/generateParks.mjs
-// 출처: map-test/data/대전광역시_*_도시공원정보_*.csv (대전 5개 구 공공데이터)
+// 출처: map-test/data/공원/대전광역시_*_도시공원정보_*.csv (대전 5개 구 공공데이터)
 // 노드 수: 465 · 제외(좌표 무효): 0
 
 export interface Park {

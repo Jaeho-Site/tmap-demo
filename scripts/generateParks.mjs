@@ -1,11 +1,11 @@
-// data/*.csv (대전 5개 구 도시공원정보) → src/data/parks.ts 생성
+// data/공원/*.csv (대전 5개 구 도시공원정보) → src/data/parks.ts 생성
 // 위도/경도가 유효한 모든 행을 노드로 만들고 이름·구분·시설 기반 태그를 부여한다.
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const DATA_DIR = join(__dirname, '..', 'data')
+const DATA_DIR = join(__dirname, '..', 'data', '공원')
 const OUT = join(__dirname, '..', 'src', 'data', 'parks.ts')
 
 // 따옴표(내부 쉼표 포함)를 처리하는 최소 CSV 파서
@@ -103,7 +103,7 @@ for (const file of files) {
 }
 
 const banner = `// 자동 생성 파일 — 수정 금지. 재생성: node scripts/generateParks.mjs
-// 출처: map-test/data/대전광역시_*_도시공원정보_*.csv (대전 5개 구 공공데이터)
+// 출처: map-test/data/공원/대전광역시_*_도시공원정보_*.csv (대전 5개 구 공공데이터)
 // 노드 수: ${parks.length} · 제외(좌표 무효): ${skipped}
 `
 

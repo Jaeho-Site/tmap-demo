@@ -24,6 +24,7 @@ function App() {
   const [showParks, setShowParks] = useState(true)
   const [activeCategories, setActiveCategories] = useState(INITIAL_CATEGORIES)
   const [showStreets, setShowStreets] = useState(true)
+  const [showWalkways, setShowWalkways] = useState(true)
   const [focus, setFocus] = useState<{ lat: number; lng: number } | null>(null)
 
   const toggle = (id: PurposeId) =>
@@ -44,6 +45,8 @@ function App() {
         onToggleCategory={toggleCategory}
         showStreets={showStreets}
         onToggleStreets={() => setShowStreets((v) => !v)}
+        showWalkways={showWalkways}
+        onToggleWalkways={() => setShowWalkways((v) => !v)}
       />
 
       <main className="map-area">
@@ -53,6 +56,7 @@ function App() {
             showParks={showParks}
             activeCategories={activeCategories}
             showStreets={showStreets}
+            showWalkways={showWalkways}
             focus={focus}
           />
         )}

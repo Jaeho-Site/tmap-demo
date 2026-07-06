@@ -8,9 +8,9 @@
     <!--
       TMAP Web JS SDK v2 — 동기 로드 필수.
       jsv2는 document.write로 실제 SDK를 주입하는 부트스트랩이라, 파싱 시점에 로드돼야 한다.
-      appKey는 src/config.ts와 동일하게 유지할 것.
+      appKey는 .env 의 VITE_TMAP_APP_KEY 를 Vite가 빌드/개발 시 %...% 자리에 정적 치환한다.
     -->
-    <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=QrqfJJm26I5kWsKHlI4mA7IX77yOQJ8FasRSmVCL"></script>
+    <script src="https://apis.openapi.sk.com/tmap/jsv2?version=1&appKey=%VITE_TMAP_APP_KEY%"></script>
   </head>
   <body>
     <div id="root"></div>
