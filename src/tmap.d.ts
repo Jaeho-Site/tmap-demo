@@ -75,6 +75,7 @@ declare global {
     class Polyline {
       constructor(options: PolylineOptions)
       setMap(map: Map | null): void
+      addListener?(event: string, handler: () => void): void
     }
   }
 }
