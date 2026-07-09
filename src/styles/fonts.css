@@ -1,0 +1,23 @@
+/* 나눔스퀘어 라운드 — 로컬 self-host (public/fonts). 라이선스 안전, CDN 의존 없음. */
+@font-face {
+  font-family: 'NanumSquareRound';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/NanumSquareRoundR.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'NanumSquareRound';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/NanumSquareRoundB.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'NanumSquareRound';
+  /* ExtraBold — 제목/CTA용. 800·900 모두 EB로 매핑. */
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/NanumSquareRoundEB.woff2') format('woff2');
+}

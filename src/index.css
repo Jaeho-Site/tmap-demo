@@ -1,14 +1,46 @@
-:root {
-  font: 15px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: dark;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Pretendard(폴백) — 나눔스퀘어 라운드가 커버 못하는 글리프 보조 */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import './styles/fonts.css';
+@import 'tailwindcss';
+
+/* ── AllTrails 기반 디자인 토큰 (docs/DESIGN_SYSTEM.md) ────────────────────── */
+@theme {
+  --font-sans: 'NanumSquareRound', 'Pretendard', -apple-system, system-ui, sans-serif;
+
+  /* 표면 */
+  --color-bg: #0b0b0c;
+  --color-surface: #171718;
+  --color-surface-2: #242426;
+  --color-border: #2a2a2c;
+
+  /* 텍스트 */
+  --color-fg: #ffffff;
+  --color-fg-muted: #a1a1a6;
+
+  /* 브랜드 액센트 (라임그린) */
+  --color-primary: #b6f35e;
+  --color-on-primary: #0b0b0c;
+
+  /* 난이도 / 상태 */
+  --color-diff-easy: #7cc143;
+  --color-diff-moderate: #f2c037;
+  --color-diff-hard: #e8622c;
+  --color-star: #f2c037;
+  --color-danger: #e5484d;
+
+  /* 반경 */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
 }
 
+/* ── 전역 base ────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+}
 * {
   box-sizing: border-box;
 }
-
 html,
 body,
 #root {
@@ -17,7 +49,22 @@ body,
   width: 100%;
   height: 100%;
 }
-
 body {
-  background: #0f172a;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 모바일 우선: 텍스트 확대 방지, 탭 하이라이트 제거 */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+button {
+  font-family: inherit;
+}
+/* 스크롤바 최소화(모바일 감성) */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
