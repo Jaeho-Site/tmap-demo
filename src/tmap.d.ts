@@ -23,8 +23,10 @@ declare global {
     class Map {
       constructor(container: string | HTMLElement, options?: MapOptions)
       setCenter(latlng: LatLng): void
+      getCenter(): LatLng
       setZoom(zoom: number): void
       getZoom(): number
+      addListener(event: string, handler: (event: unknown) => void): void
       destroy(): void
     }
 

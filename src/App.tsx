@@ -2,9 +2,14 @@ import { useState } from 'react'
 import './App.css'
 import { useTmapSdk } from './hooks/useTmapSdk'
 import { MapView } from './components/MapView'
+import { RecommendationDemo } from './components/RecommendationDemo'
 import { Sidebar } from './components/Sidebar'
 import { PURPOSES, type PurposeId } from './data/daejeonData'
 import { PARK_CATEGORY_COUNTS } from './data/parkMeta'
+import type { OsmPathCategory } from './data/osmPaths'
+import { OSM_PATH_COUNTS } from './data/osmPathMeta'
+import { OSM_GAPCHEON_COLOR } from './data/osmGapcheonMeta'
+import { OSM_WALK_EDGE_COLOR } from './data/osmWalkEdgeMeta'
 
 const INITIAL_LAYERS: Record<PurposeId, boolean> = {
   safety: true,
@@ -20,11 +25,20 @@ const INITIAL_CATEGORIES: Record<string, boolean> = Object.fromEntries(
 
 function App() {
   const { status, error } = useTmapSdk()
+  const [page, setPage] = useState<'map' | 'recommend'>('map')
   const [activeLayers, setActiveLayers] = useState(INITIAL_LAYERS)
   const [showParks, setShowParks] = useState(true)
   const [activeCategories, setActiveCategories] = useState(INITIAL_CATEGORIES)
   const [showStreets, setShowStreets] = useState(true)
   const [showWalkways, setShowWalkways] = useState(true)
+  const [showTmapRiverWalks, setShowTmapRiverWalks] = useState(true)
+  const [showTmapArboretumWalks, setShowTmapArboretumWalks] = useState(true)
+  const [showOsmGapcheonWalks, setShowOsmGapcheonWalks] = useState(false)
+  const [showOsmWalkEdges, setShowOsmWalkEdges] = useState(false)
+  const [activeOsmPaths, setActiveOsmPaths] = useState<Record<OsmPathCategory, boolean>>({
+    park_walk: true,
+    river_walk: false,
+  })
   const [focus, setFocus] = useState<{ lat: number; lng: number } | null>(null)
 
   const toggle = (id: PurposeId) =>
@@ -33,8 +47,26 @@ function App() {
   const toggleCategory = (category: string) =>
     setActiveCategories((prev) => ({ ...prev, [category]: !prev[category] }))
 
+  const toggleOsmPath = (category: OsmPathCategory) =>
+    setActiveOsmPaths((prev) => ({ ...prev, [category]: !prev[category] }))
+
+  if (page === 'recommend') {
+    return <RecommendationDemo status={status} error={error} onBack={() => setPage('map')} />
+  }
+
   return (
     <div className="layout">
+      <div className="mode-switch">
+        <button type="button" className="active">데이터 지도</button>
+        <button type="button" onClick={() => setPage('recommend')}>LLM 추천 데모</button>
+        <button
+          type="button"
+          className={showOsmWalkEdges ? 'active' : ''}
+          onClick={() => setShowOsmWalkEdges((v) => !v)}
+        >
+          OSM walk edges
+        </button>
+      </div>
       <Sidebar
         activeLayers={activeLayers}
         onToggle={toggle}
@@ -47,6 +79,14 @@ function App() {
         onToggleStreets={() => setShowStreets((v) => !v)}
         showWalkways={showWalkways}
         onToggleWalkways={() => setShowWalkways((v) => !v)}
+        showTmapRiverWalks={showTmapRiverWalks}
+        onToggleTmapRiverWalks={() => setShowTmapRiverWalks((v) => !v)}
+        showTmapArboretumWalks={showTmapArboretumWalks}
+        onToggleTmapArboretumWalks={() => setShowTmapArboretumWalks((v) => !v)}
+        showOsmGapcheonWalks={showOsmGapcheonWalks}
+        onToggleOsmGapcheonWalks={() => setShowOsmGapcheonWalks((v) => !v)}
+        activeOsmPaths={activeOsmPaths}
+        onToggleOsmPath={toggleOsmPath}
       />
 
       <main className="map-area">
@@ -57,6 +97,11 @@ function App() {
             activeCategories={activeCategories}
             showStreets={showStreets}
             showWalkways={showWalkways}
+            showTmapRiverWalks={showTmapRiverWalks}
+            showTmapArboretumWalks={showTmapArboretumWalks}
+            showOsmGapcheonWalks={showOsmGapcheonWalks}
+            showOsmWalkEdges={showOsmWalkEdges}
+            activeOsmPaths={activeOsmPaths}
             focus={focus}
           />
         )}
@@ -87,6 +132,28 @@ function App() {
               {p.emoji} {p.label}
             </span>
           ))}
+          {OSM_PATH_COUNTS.map((item) => (
+            <span key={item.category} className={activeOsmPaths[item.category] ? '' : 'off'}>
+              <i style={{ background: item.color }} />
+              OSM {item.label}
+            </span>
+          ))}
+          <span className={showTmapRiverWalks ? '' : 'off'}>
+            <i style={{ background: '#f97316' }} />
+            TMAP 갑천 보행로
+          </span>
+          <span className={showTmapArboretumWalks ? '' : 'off'}>
+            <i style={{ background: '#14b8a6' }} />
+            TMAP 한밭수목원
+          </span>
+          <span className={showOsmGapcheonWalks ? '' : 'off'}>
+            <i style={{ background: OSM_GAPCHEON_COLOR }} />
+            OSM 갑천 산책로
+          </span>
+          <span className={showOsmWalkEdges ? '' : 'off'}>
+            <i style={{ background: OSM_WALK_EDGE_COLOR }} />
+            OSM walk edges
+          </span>
         </div>
       </main>
     </div>
