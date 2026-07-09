@@ -15,6 +15,21 @@ import {
   WALKWAY_SEPARATED_COUNT,
   WALKWAY_LEGEND,
 } from '../data/walkwayMeta'
+import type { OsmPathCategory } from '../data/osmPaths'
+import {
+  OSM_PATH_COUNTS,
+  OSM_PATH_NODE_TOTAL,
+  OSM_PATH_TOTAL,
+  OSM_PATH_TOTAL_LENGTH_KM,
+} from '../data/osmPathMeta'
+import { TMAP_RIVER_WALKS } from '../data/tmapRiverWalks'
+import { TMAP_ARBORETUM_WALKS } from '../data/tmapArboretumWalks'
+import {
+  OSM_GAPCHEON_COLOR,
+  OSM_GAPCHEON_NODE_TOTAL,
+  OSM_GAPCHEON_TOTAL,
+  OSM_GAPCHEON_TOTAL_LENGTH_KM,
+} from '../data/osmGapcheonMeta'
 
 interface SidebarProps {
   activeLayers: Record<PurposeId, boolean>
@@ -28,6 +43,14 @@ interface SidebarProps {
   onToggleStreets: () => void
   showWalkways: boolean
   onToggleWalkways: () => void
+  showTmapRiverWalks: boolean
+  onToggleTmapRiverWalks: () => void
+  showTmapArboretumWalks: boolean
+  onToggleTmapArboretumWalks: () => void
+  showOsmGapcheonWalks: boolean
+  onToggleOsmGapcheonWalks: () => void
+  activeOsmPaths: Record<OsmPathCategory, boolean>
+  onToggleOsmPath: (category: OsmPathCategory) => void
 }
 
 export function Sidebar({
@@ -42,7 +65,29 @@ export function Sidebar({
   onToggleStreets,
   showWalkways,
   onToggleWalkways,
+  showTmapRiverWalks,
+  onToggleTmapRiverWalks,
+  showTmapArboretumWalks,
+  onToggleTmapArboretumWalks,
+  showOsmGapcheonWalks,
+  onToggleOsmGapcheonWalks,
+  activeOsmPaths,
+  onToggleOsmPath,
 }: SidebarProps) {
+  const tmapRiverDistance = TMAP_RIVER_WALKS.reduce(
+    (sum, walk) => sum + (walk.distance ?? 0),
+    0,
+  )
+  const tmapRiverNodes = TMAP_RIVER_WALKS.reduce((sum, walk) => sum + walk.path.length, 0)
+  const tmapArboretumDistance = TMAP_ARBORETUM_WALKS.reduce(
+    (sum, walk) => sum + (walk.distance ?? 0),
+    0,
+  )
+  const tmapArboretumNodes = TMAP_ARBORETUM_WALKS.reduce(
+    (sum, walk) => sum + walk.path.length,
+    0,
+  )
+
   return (
     <aside className="sidebar">
       <header className="sidebar-head">
@@ -149,6 +194,90 @@ export function Sidebar({
               {t.label}
             </span>
           ))}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="park-head">
+          <h2>🟠 TMAP 갑천 보행로 ({TMAP_RIVER_WALKS.length})</h2>
+          <label className="park-master">
+            <input type="checkbox" checked={showTmapRiverWalks} onChange={onToggleTmapRiverWalks} />
+            <span>길찾기 표시</span>
+          </label>
+        </div>
+        <p className="foot" style={{ marginTop: 0, marginBottom: 10 }}>
+          한밭수목원 북측 갑천 구간을 <b>TMAP 보행자 길찾기</b>로 계산 · {tmapRiverDistance.toLocaleString()}m · 노드 {tmapRiverNodes}
+        </p>
+      </section>
+
+      <section className="panel">
+        <div className="park-head">
+          <h2>🌿 TMAP 한밭수목원 ({TMAP_ARBORETUM_WALKS.length})</h2>
+          <label className="park-master">
+            <input
+              type="checkbox"
+              checked={showTmapArboretumWalks}
+              onChange={onToggleTmapArboretumWalks}
+            />
+            <span>내부 산책로</span>
+          </label>
+        </div>
+        <p className="foot" style={{ marginTop: 0, marginBottom: 10 }}>
+          한밭수목원 내부 OSM 산책로 노드끼리를 <b>TMAP 보행자 길찾기</b>로 계산 · {tmapArboretumDistance.toLocaleString()}m · 노드 {tmapArboretumNodes}
+        </p>
+      </section>
+
+      <section className="panel">
+        <div className="park-head">
+          <h2>🟣 OSM 갑천 산책로 ({OSM_GAPCHEON_TOTAL})</h2>
+          <label className="park-master">
+            <input
+              type="checkbox"
+              checked={showOsmGapcheonWalks}
+              onChange={onToggleOsmGapcheonWalks}
+            />
+            <span>노드 표시</span>
+          </label>
+        </div>
+        <p className="foot" style={{ marginTop: 0, marginBottom: 10 }}>
+          충남대~엑스포공원 사이 갑천 주변 170m의 OSM 보행/산책로 · 노드 {OSM_GAPCHEON_NODE_TOTAL.toLocaleString()}개 · 약 {OSM_GAPCHEON_TOTAL_LENGTH_KM}km
+        </p>
+        <div className="chip-list">
+          <span className="chip on static" style={{ '--chip': OSM_GAPCHEON_COLOR } as CSSProperties}>
+            <i />
+            footway/path/cycleway
+          </span>
+        </div>
+        <p className="foot" style={{ marginTop: 10, marginBottom: 0 }}>
+          노드 클릭 시 태그 표시: river, gapcheon, open-view, flat, paved, pedestrian, shared-bike, walkable, short/medium/long
+        </p>
+      </section>
+
+      <section className="panel">
+        <div className="park-head">
+          <h2>🧭 OSM 산책 노드 ({OSM_PATH_TOTAL})</h2>
+        </div>
+        <p className="foot" style={{ marginTop: 0, marginBottom: 10 }}>
+          OpenStreetMap에서 수집한 공원 내부 산책로와 하천로 · 경로 선 전체 표시 · 노드 {OSM_PATH_NODE_TOTAL.toLocaleString()}개
+          중 긴 경로부터 샘플 표시 · 총 약 {OSM_PATH_TOTAL_LENGTH_KM}km
+        </p>
+        <div className="chip-list">
+          {OSM_PATH_COUNTS.map((item) => {
+            const on = activeOsmPaths[item.category]
+            return (
+              <button
+                key={item.category}
+                type="button"
+                className={`chip ${on ? 'on' : ''}`}
+                style={{ '--chip': item.color } as CSSProperties}
+                onClick={() => onToggleOsmPath(item.category)}
+              >
+                <i />
+                {item.label}
+                <em>{item.count}</em>
+              </button>
+            )
+          })}
         </div>
       </section>
 
