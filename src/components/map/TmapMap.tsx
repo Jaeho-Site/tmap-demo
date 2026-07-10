@@ -32,18 +32,24 @@ interface TmapMapProps {
   filterPurpose?: PurposeId | null
   selectedId?: string | null
   userLocation?: LatLng | null
+  /** AI 추천 경로(모험) — 안내선으로 표시. */
+  guidePath?: LatLng[] | null
+  /** 실시간 이동 경로(모험) — 걸을수록 그려짐. */
+  livePath?: LatLng[] | null
   onSelectCourse?: (id: string) => void
   className?: string
 }
 
 export const TmapMap = forwardRef<TmapMapHandle, TmapMapProps>(function TmapMap(
-  { courses, filterPurpose, selectedId, userLocation, onSelectCourse, className },
+  { courses, filterPurpose, selectedId, userLocation, guidePath, livePath, onSelectCourse, className },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<Tmapv2.Map | null>(null)
   const linesRef = useRef<Map<string, Tmapv2.Polyline>>(new Map())
   const highlightRef = useRef<Tmapv2.Polyline | null>(null)
+  const guideRef = useRef<Tmapv2.Polyline | null>(null)
+  const liveRef = useRef<Tmapv2.Polyline | null>(null)
   const userRef = useRef<Tmapv2.Marker | null>(null)
   const onSelectRef = useRef(onSelectCourse)
   onSelectRef.current = onSelectCourse
@@ -114,9 +120,13 @@ export const TmapMap = forwardRef<TmapMapHandle, TmapMapProps>(function TmapMap(
       lines.forEach((l) => safe(() => l.setMap(null)))
       lines.clear()
       safe(() => highlightRef.current?.setMap(null))
+      safe(() => guideRef.current?.setMap(null))
+      safe(() => liveRef.current?.setMap(null))
       safe(() => userRef.current?.setMap(null))
       safe(() => map.destroy?.())
       highlightRef.current = null
+      guideRef.current = null
+      liveRef.current = null
       userRef.current = null
       mapRef.current = null
     }
@@ -168,6 +178,40 @@ export const TmapMap = forwardRef<TmapMapHandle, TmapMapProps>(function TmapMap(
       map,
     })
   }, [userLocation])
+
+  // AI 추천 경로(모험) — 보라색 안내선
+  useEffect(() => {
+    const map = mapRef.current
+    const T = window.Tmapv2
+    if (!map || !T) return
+    guideRef.current?.setMap(null)
+    guideRef.current = null
+    if (!guidePath || guidePath.length < 2) return
+    guideRef.current = new T.Polyline({
+      path: guidePath.map((p) => new T.LatLng(p.lat, p.lng)),
+      strokeColor: '#8b5cf6',
+      strokeWeight: 6,
+      strokeOpacity: 0.9,
+      map,
+    })
+  }, [guidePath])
+
+  // 실시간 이동 경로(모험) — 라임, 걸을수록 위에 덧그림
+  useEffect(() => {
+    const map = mapRef.current
+    const T = window.Tmapv2
+    if (!map || !T) return
+    liveRef.current?.setMap(null)
+    liveRef.current = null
+    if (!livePath || livePath.length < 2) return
+    liveRef.current = new T.Polyline({
+      path: livePath.map((p) => new T.LatLng(p.lat, p.lng)),
+      strokeColor: '#b6f35e',
+      strokeWeight: 6,
+      strokeOpacity: 1,
+      map,
+    })
+  }, [livePath])
 
   return <div ref={containerRef} className={className} />
 })
