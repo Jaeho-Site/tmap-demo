@@ -1,10 +1,11 @@
 import { cn } from '@/lib/utils'
 
-export type ExploreView = 'map' | 'collection'
+export type ExploreView = 'map' | 'collection' | 'adventure'
 
 const OPTIONS: { id: ExploreView; label: string }[] = [
   { id: 'map', label: '지도' },
   { id: 'collection', label: '도감' },
+  { id: 'adventure', label: '모험' },
 ]
 
 export function ExploreToggle({
@@ -28,7 +29,7 @@ export function ExploreToggle({
           key={o.id}
           onClick={() => onChange(o.id)}
           className={cn(
-            'h-9 rounded-full px-6 text-sm font-extrabold transition-colors',
+            'h-9 rounded-full px-5 text-sm font-extrabold transition-colors',
             view === o.id ? 'bg-primary text-on-primary' : 'text-fg-muted',
           )}
         >
