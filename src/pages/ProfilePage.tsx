@@ -1,16 +1,35 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, ChevronRight, Compass, Heart } from 'lucide-react'
+import { Settings, ChevronRight, Compass, Heart, LogOut } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { listWalks } from '@/features/history/records'
 import { computeStats } from '@/features/history/stats'
 import { useSaved } from '@/store/saved'
 import { formatMetersKm } from '@/lib/format'
+import { AUTH_KEY } from '@/app/AppRoot'
+
+const PROVIDER_LABEL: Record<string, string> = {
+  kakao: '카카오',
+  naver: '네이버',
+  google: 'Google',
+  guest: '게스트',
+}
 
 export function ProfilePage() {
   const navigate = useNavigate()
   const stats = useMemo(() => computeStats(listWalks()), [])
   const savedCount = useSaved((s) => s.ids.length)
+  const provider = (typeof localStorage !== 'undefined' && localStorage.getItem(AUTH_KEY)) || 'guest'
+  const isGuest = provider === 'guest'
+
+  const logout = () => {
+    try {
+      localStorage.removeItem(AUTH_KEY)
+    } catch {
+      /* 무시 */
+    }
+    window.location.href = '/' // AppRoot 재시작(스플래시 → 로그인)
+  }
 
   return (
     <div>
@@ -24,11 +43,13 @@ export function ProfilePage() {
       <div className="px-4">
         <div className="flex items-center gap-3 py-2">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 text-xl font-extrabold">
-            게
+            {PROVIDER_LABEL[provider]?.[0] ?? '게'}
           </div>
           <div>
-            <p className="text-lg font-extrabold">게스트</p>
-            <p className="text-sm text-fg-muted">로그인하고 기록을 저장하세요</p>
+            <p className="text-lg font-extrabold">{PROVIDER_LABEL[provider] ?? '게스트'} 워커</p>
+            <p className="text-sm text-fg-muted">
+              {isGuest ? '로그인 없이 둘러보는 중' : `${PROVIDER_LABEL[provider]} 계정으로 로그인됨`}
+            </p>
           </div>
         </div>
 
@@ -56,8 +77,16 @@ export function ProfilePage() {
           </button>
         </Card>
 
+        <Card className="mt-3">
+          <button onClick={logout} className="flex w-full items-center gap-3 p-4">
+            <LogOut size={22} className="text-danger" />
+            <span className="font-extrabold text-danger">{isGuest ? '로그인하기' : '로그아웃'}</span>
+            <ChevronRight size={20} className="ml-auto text-fg-muted" />
+          </button>
+        </Card>
+
         <p className="mt-6 text-center text-xs text-fg-muted">
-          게스트 모드 · 로그인·설정은 이후 단계에서 연결됩니다
+          프로토타입 · 소셜 로그인은 실제 인증 없이 데모로 동작합니다
         </p>
       </div>
     </div>
