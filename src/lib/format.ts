@@ -18,6 +18,11 @@ export function estimateKcal(distanceM: number): number {
   return Math.round((distanceM / 1000) * 0.5 * 60)
 }
 
+/** 걸은 거리(m) 기준 대략 걸음수(평균 보폭 ~0.71m). */
+export function estimateSteps(distanceM: number): number {
+  return Math.round(distanceM / 0.71)
+}
+
 /** 산책 날짜 — 오늘/어제 또는 "M월 D일". */
 export function formatWalkDate(ts: number): string {
   const d = new Date(ts)

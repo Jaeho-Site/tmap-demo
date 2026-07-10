@@ -5,6 +5,9 @@ export interface WalkStats {
   totalDistanceM: number
   monthWalks: number
   monthDistanceM: number
+  /** 오늘 걸은 횟수/거리. */
+  todayWalks: number
+  todayDistanceM: number
   /** 연속 산책 일수(오늘 또는 어제 기준). */
   dayStreak: number
 }
@@ -14,10 +17,13 @@ const dayStr = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 export function computeStats(records: WalkRecord[]): WalkStats {
   const now = new Date()
   const curMonth = now.getFullYear() * 12 + now.getMonth()
+  const today = dayStr(now)
 
   let totalDistanceM = 0
   let monthWalks = 0
   let monthDistanceM = 0
+  let todayWalks = 0
+  let todayDistanceM = 0
   const days = new Set<string>()
 
   for (const r of records) {
@@ -26,6 +32,10 @@ export function computeStats(records: WalkRecord[]): WalkStats {
     if (d.getFullYear() * 12 + d.getMonth() === curMonth) {
       monthWalks++
       monthDistanceM += r.distanceM
+    }
+    if (dayStr(d) === today) {
+      todayWalks++
+      todayDistanceM += r.distanceM
     }
     days.add(dayStr(d))
   }
@@ -44,6 +54,8 @@ export function computeStats(records: WalkRecord[]): WalkStats {
     totalDistanceM,
     monthWalks,
     monthDistanceM,
+    todayWalks,
+    todayDistanceM,
     dayStreak,
   }
 }
