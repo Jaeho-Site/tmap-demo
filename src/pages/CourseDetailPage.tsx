@@ -48,7 +48,7 @@ export function CourseDetailPage() {
   const purposeLabels = PURPOSES.filter((p) => course.purposes.includes(p.id))
 
   return (
-    <div className="flex h-screen flex-col bg-bg">
+    <div className="relative flex h-screen flex-col bg-bg">
       {/* 지도 */}
       <div className="relative h-[42vh] shrink-0">
         {status === 'ready' ? (
