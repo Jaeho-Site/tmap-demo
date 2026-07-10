@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Sparkles, Play, Pause, Flag, X, Footprints, RotateCcw, Navigation } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Sparkles, Play, Pause, Flag, X, Footprints, RotateCcw, Navigation, Heart } from 'lucide-react'
 import { useTmapSdk } from '@/hooks/useTmapSdk'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { useFreeWalk } from '@/features/walk/useFreeWalk'
@@ -12,6 +12,7 @@ import {
   type TripType,
 } from '@/features/adventure/suggestRoute'
 import { saveWalk } from '@/features/history/records'
+import { useCustomRoutes, getCustomRoute, type CustomRoute } from '@/store/customRoutes'
 import { DAEJEON_CENTER } from '@/config'
 import { TmapMap, type TmapMapHandle } from '@/components/map/TmapMap'
 import { MapControls } from '@/components/map/MapControls'
@@ -34,9 +35,13 @@ export function AdventureView({
 }) {
   const { status: sdk, error } = useTmapSdk()
   const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
   const mapHandle = useRef<TmapMapHandle>(null)
   const { coords, loading, request } = useGeolocation()
   const session = useFreeWalk()
+  const saveRoute = useCustomRoutes((s) => s.save)
+  const removeRoute = useCustomRoutes((s) => s.remove)
+  const savedRoutes = useCustomRoutes((s) => s.routes)
 
   const [route, setRoute] = useState<SuggestedRoute | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -55,6 +60,33 @@ export function AdventureView({
   useEffect(() => {
     request()
   }, [request])
+
+  // 진입 딥링크 처리(1회): ?ai=1 → 조건 폼 자동 오픈 / ?route=<id> → 저장 경로 불러오기
+  useEffect(() => {
+    const routeId = params.get('route')
+    if (routeId) {
+      const c = getCustomRoute(routeId)
+      if (c) {
+        setRoute(customToSuggested(c))
+        mapHandle.current?.panTo(c.path[Math.floor(c.path.length / 2)], 15)
+      }
+    } else if (params.get('ai') === '1') {
+      setFormOpen(true)
+    }
+    if (params.has('ai') || params.has('route')) {
+      params.delete('ai')
+      params.delete('route')
+      setParams(params, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const routeSaved = route ? savedRoutes.some((r) => r.id === route.id) : false
+  const toggleSaveRoute = () => {
+    if (!route) return
+    if (routeSaved) removeRoute(route.id)
+    else saveRoute(suggestedToCustom(route))
+  }
 
   // 대기 중엔 현위치로, 기록 중엔 이동 위치로 지도 추적
   useEffect(() => {
@@ -150,6 +182,8 @@ export function AdventureView({
           />
           <SetupSheet
             route={route}
+            saved={routeSaved}
+            onToggleSave={toggleSaveRoute}
             onOpenForm={() => setFormOpen(true)}
             onClearRoute={() => setRoute(null)}
             onStartFree={startFree}
@@ -179,12 +213,16 @@ export function AdventureView({
 
 function SetupSheet({
   route,
+  saved,
+  onToggleSave,
   onOpenForm,
   onClearRoute,
   onStartFree,
   onStartRoute,
 }: {
   route: SuggestedRoute | null
+  saved: boolean
+  onToggleSave: () => void
   onOpenForm: () => void
   onClearRoute: () => void
   onStartFree: () => void
@@ -210,6 +248,14 @@ function SetupSheet({
           <div className="mb-1 flex items-center gap-1.5">
             <Sparkles size={15} className="text-[#a78bfa]" />
             <span className="text-xs font-extrabold text-[#a78bfa]">AI 추천 · 베타</span>
+            <button
+              onClick={onToggleSave}
+              className="ml-auto flex items-center gap-1 rounded-full bg-surface px-2.5 py-1 text-xs font-bold active:scale-95 transition-transform"
+              aria-label={saved ? '경로 저장 해제' : '경로 저장'}
+            >
+              <Heart size={14} className={saved ? 'fill-primary text-primary' : 'text-fg-muted'} />
+              {saved ? '저장됨' : '저장'}
+            </button>
           </div>
           <p className="font-extrabold">{route.name}</p>
           <p className="mt-0.5 text-sm text-fg-muted">
@@ -333,6 +379,32 @@ function RouteForm({
 
 function FormLabel({ children }: { children: React.ReactNode }) {
   return <p className="mb-2 text-sm font-extrabold">{children}</p>
+}
+
+/* ── 커스텀 경로 ↔ 추천 경로 표시 모델 변환 ─────────────────────────────── */
+function suggestedToCustom(r: SuggestedRoute): CustomRoute {
+  return {
+    id: r.id,
+    name: r.name,
+    kind: 'ai',
+    distanceKm: r.distanceKm,
+    estMinutes: r.estMinutes,
+    path: r.path,
+    trip: r.trip,
+    createdAt: Date.now(),
+  }
+}
+function customToSuggested(c: CustomRoute): SuggestedRoute {
+  return {
+    id: c.id,
+    name: c.name,
+    distanceKm: c.distanceKm,
+    estMinutes: c.estMinutes,
+    trip: c.trip ?? 'round',
+    path: c.path,
+    waypoints: [c.path[0], c.path[Math.floor(c.path.length / 2)], c.path[c.path.length - 1]],
+    summary: c.kind === 'ai' ? '저장해 둔 AI 추천 경로예요.' : '저장해 둔 나의 산책 경로예요.',
+  }
 }
 
 function RecordingOverlay({

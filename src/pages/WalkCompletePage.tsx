@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, Flag, ThumbsUp, ThumbsDown, Sparkles, Plus } from 'lucide-react'
+import { CheckCircle2, Flag, ThumbsUp, ThumbsDown, Sparkles, Plus, Heart, Route } from 'lucide-react'
 import { getWalk, saveWalk } from '@/features/history/records'
+import { useCustomRoutes } from '@/store/customRoutes'
 import { recordProblemTags } from '@/features/feedback/quality'
 import { POSITIVE_TAGS, PROBLEM_TAGS } from '@/features/feedback/tags'
 import { buildRetrospective } from '@/features/retrospective/generate'
@@ -22,6 +23,10 @@ export function WalkCompletePage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [custom, setCustom] = useState('')
   const qualitySaved = useRef(false)
+
+  const saveRoute = useCustomRoutes((s) => s.save)
+  const removeRoute = useCustomRoutes((s) => s.remove)
+  const savedRoutes = useCustomRoutes((s) => s.routes)
 
   const retro = useMemo(
     () => (base ? buildRetrospective({ ...base, rating: rating ?? undefined, tags }) : ''),
@@ -44,6 +49,28 @@ export function WalkCompletePage() {
     )
   }
   const record = base
+
+  // 커스텀 산책(자유/AI)만 경로 저장 가능 — 카탈로그 코스는 이미 코스로 존재
+  const isCustomWalk =
+    record.courseId.startsWith('free-') || record.courseId.startsWith('ai-')
+  const canSaveRoute = isCustomWalk && record.track.length >= 2
+  const routeSaved = savedRoutes.some((r) => r.id === record.courseId)
+  const toggleSaveRoute = () => {
+    if (routeSaved) {
+      removeRoute(record.courseId)
+      return
+    }
+    saveRoute({
+      id: record.courseId,
+      name: record.courseName,
+      kind: record.courseId.startsWith('ai-') ? 'ai' : 'free',
+      distanceKm: Math.round(record.distanceM / 100) / 10,
+      estMinutes: Math.max(1, Math.round(record.durationSec / 60)),
+      path: record.track,
+      trip: 'oneway',
+      createdAt: Date.now(),
+    })
+  }
 
   const chooseRating = (r: 'up' | 'down') => {
     setRating(r)
@@ -148,6 +175,27 @@ export function WalkCompletePage() {
           <p className="text-[15px] leading-relaxed">{retro}</p>
         </div>
       </Card>
+
+      {/* 커스텀 경로 저장 (자유 산책 · AI 경로) */}
+      {canSaveRoute && (
+        <Card className="mt-4">
+          <button onClick={toggleSaveRoute} className="flex w-full items-center gap-3 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-2 text-primary">
+              <Route size={20} />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="font-extrabold">{routeSaved ? '저장한 경로' : '이 경로 저장하기'}</p>
+              <p className="mt-0.5 text-xs text-fg-muted">
+                {routeSaved ? '저장 탭에서 다시 걸을 수 있어요' : '방금 걸은 길을 내 경로로 보관해요'}
+              </p>
+            </div>
+            <Heart
+              size={22}
+              className={routeSaved ? 'shrink-0 fill-primary text-primary' : 'shrink-0 text-fg-muted'}
+            />
+          </button>
+        </Card>
+      )}
 
       {record.notes.length > 0 && (
         <div className="mt-4">
