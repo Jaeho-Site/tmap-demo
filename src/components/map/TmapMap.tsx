@@ -132,16 +132,22 @@ export const TmapMap = forwardRef<TmapMapHandle, TmapMapProps>(function TmapMap(
     }
   }, [courses])
 
-  // 목적 필터 → 폴리라인 표시/숨김 (재생성 없이)
+  // 베이스 폴리라인 가시성 — 선택 > 필터 단일 계산(두 이펙트가 서로 덮어쓰지 않도록 통합)
+  // 선택된 경로가 있으면 나머지 초록선은 전부 숨기고 라임 하이라이트만 노출,
+  // 선택 해제 시 목적 필터 규칙대로 전체/필터 폴리라인 복원.
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
     linesRef.current.forEach((line, id) => {
+      if (selectedId) {
+        line.setMap(null)
+        return
+      }
       const c = courseMap.get(id)
       const show = !filterPurpose || (c ? c.purposes.includes(filterPurpose) : false)
       line.setMap(show ? map : null)
     })
-  }, [filterPurpose, courseMap])
+  }, [filterPurpose, selectedId, courseMap])
 
   // 선택 하이라이트(라임) — 위에 덧그림
   useEffect(() => {
