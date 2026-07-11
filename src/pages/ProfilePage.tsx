@@ -1,10 +1,13 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Settings, ChevronRight, Compass, Heart, LogOut } from 'lucide-react'
+import { Settings, ChevronRight, Compass, Heart, LogOut, PawPrint } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { listWalks } from '@/features/history/records'
 import { computeStats } from '@/features/history/stats'
 import { useSaved } from '@/store/saved'
+import { usePartner } from '@/store/partner'
+import { BREED_MAP } from '@/features/partner/breeds'
+import { RARITY_META } from '@/features/partner/gacha'
 import { formatMetersKm } from '@/lib/format'
 import { AUTH_KEY } from '@/app/AppRoot'
 
@@ -21,6 +24,11 @@ export function ProfilePage() {
   const savedCount = useSaved((s) => s.ids.length)
   const provider = (typeof localStorage !== 'undefined' && localStorage.getItem(AUTH_KEY)) || 'guest'
   const isGuest = provider === 'guest'
+
+  const dogs = usePartner((s) => s.dogs)
+  const activeUid = usePartner((s) => s.activePartnerUid)
+  const active = dogs.find((d) => d.uid === activeUid)
+  const activeBreed = active ? BREED_MAP[active.breedId] : undefined
 
   const logout = () => {
     try {
@@ -42,13 +50,28 @@ export function ProfilePage() {
 
       <div className="px-4">
         <div className="flex items-center gap-3 py-2">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 text-xl font-extrabold">
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 text-xl font-extrabold">
             {PROVIDER_LABEL[provider]?.[0] ?? '게'}
+            {activeBreed && (
+              <span
+                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full text-sm"
+                style={{
+                  background: `${RARITY_META[activeBreed.rarity].color}33`,
+                  border: `1.5px solid ${RARITY_META[activeBreed.rarity].color}`,
+                }}
+              >
+                {activeBreed.emoji}
+              </span>
+            )}
           </div>
           <div>
             <p className="text-lg font-extrabold">{PROVIDER_LABEL[provider] ?? '게스트'} 워커</p>
             <p className="text-sm text-fg-muted">
-              {isGuest ? '로그인 없이 둘러보는 중' : `${PROVIDER_LABEL[provider]} 계정으로 로그인됨`}
+              {activeBreed
+                ? `${active?.nickname || activeBreed.name}와 함께 걷는 중`
+                : isGuest
+                  ? '로그인 없이 둘러보는 중'
+                  : `${PROVIDER_LABEL[provider]} 계정으로 로그인됨`}
             </p>
           </div>
         </div>
@@ -73,6 +96,15 @@ export function ProfilePage() {
             <Heart size={22} className="text-primary" />
             <span className="font-extrabold">저장한 코스</span>
             <span className="ml-auto text-sm text-fg-muted">{savedCount}개</span>
+            <ChevronRight size={20} className="text-fg-muted" />
+          </button>
+          <div className="h-px bg-border" />
+          <button onClick={() => navigate('/partner')} className="flex w-full items-center gap-3 p-4">
+            <PawPrint size={22} className="text-primary" />
+            <span className="font-extrabold">내 파트너</span>
+            <span className="ml-auto text-sm text-fg-muted">
+              {dogs.length ? `${dogs.length}마리` : '수집 시작'}
+            </span>
             <ChevronRight size={20} className="text-fg-muted" />
           </button>
         </Card>

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { CheckCircle2, Flag, ThumbsUp, ThumbsDown, Sparkles, Plus, Heart, Route } from 'lucide-react'
-import { getWalk, saveWalk } from '@/features/history/records'
+import { CheckCircle2, Flag, ThumbsUp, ThumbsDown, Sparkles, Plus, Heart, Route, Gift, ChevronRight } from 'lucide-react'
+import { getWalk, saveWalk, listWalks } from '@/features/history/records'
+import { computeStats } from '@/features/history/stats'
 import { useCustomRoutes } from '@/store/customRoutes'
+import { usePartner } from '@/store/partner'
 import { recordProblemTags } from '@/features/feedback/quality'
 import { POSITIVE_TAGS, PROBLEM_TAGS } from '@/features/feedback/tags'
 import { buildRetrospective } from '@/features/retrospective/generate'
@@ -27,6 +29,18 @@ export function WalkCompletePage() {
   const saveRoute = useCustomRoutes((s) => s.save)
   const removeRoute = useCustomRoutes((s) => s.remove)
   const savedRoutes = useCustomRoutes((s) => s.routes)
+
+  // 완주 보상 — 상자 지급(같은 기록은 1회만) + 미개봉 상자 안내
+  const grantForWalk = usePartner((s) => s.grantForWalk)
+  const boxes = usePartner((s) => s.boxes)
+  const rewardGranted = useRef(false)
+  useEffect(() => {
+    if (!base || !base.completed || rewardGranted.current) return
+    rewardGranted.current = true
+    const dayStreak = computeStats(listWalks()).dayStreak
+    grantForWalk({ walkId: base.id, distanceM: base.distanceM, dayStreak })
+  }, [base, grantForWalk])
+  const boxTotal = boxes.normal + boxes.guaranteed
 
   const retro = useMemo(
     () => (base ? buildRetrospective({ ...base, rating: rating ?? undefined, tags }) : ''),
@@ -68,6 +82,7 @@ export function WalkCompletePage() {
       estMinutes: Math.max(1, Math.round(record.durationSec / 60)),
       path: record.track,
       trip: 'oneway',
+      shareStatus: 'private',
       createdAt: Date.now(),
     })
   }
@@ -175,6 +190,26 @@ export function WalkCompletePage() {
           <p className="text-[15px] leading-relaxed">{retro}</p>
         </div>
       </Card>
+
+      {/* 완주 보상 — 파트너 상자 (F2) */}
+      {boxTotal > 0 && (
+        <button
+          onClick={() => navigate('/partner')}
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl bg-gradient-to-r from-primary/25 to-surface p-4 text-left active:brightness-110"
+        >
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary">
+            <Gift size={22} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-extrabold">파트너 상자 {boxTotal}개 도착!</p>
+            <p className="mt-0.5 text-xs text-fg-muted">
+              {boxes.guaranteed > 0 ? `확정 상자 ${boxes.guaranteed}개 포함 · ` : ''}
+              열어서 산책 파트너를 만나보세요
+            </p>
+          </div>
+          <ChevronRight size={20} className="shrink-0 text-fg-muted" />
+        </button>
+      )}
 
       {/* 커스텀 경로 저장 (자유 산책 · AI 경로) */}
       {canSaveRoute && (

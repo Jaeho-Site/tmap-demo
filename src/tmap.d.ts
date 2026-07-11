@@ -75,6 +75,10 @@ declare global {
     class Polyline {
       constructor(options: PolylineOptions)
       setMap(map: Map | null): void
+      /** 캔버스 렌더에서 실제로 표시/숨김. setMap(null)만으론 화면에서 지워지지 않음. */
+      setVisible(visible: boolean): void
+      setPath(path: LatLng[]): void
+      getPath(): LatLng[]
       addListener?(event: string, handler: () => void): void
     }
   }

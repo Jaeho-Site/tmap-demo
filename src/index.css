@@ -95,3 +95,29 @@ button {
 .so-fade { animation: so-fade 0.7s ease-out both; }
 .so-ring { animation: so-ring 1.8s ease-out infinite; }
 .so-leaving { animation: so-fadeout 0.4s ease-in forwards; }
+
+/* ── 파트너 상자 개봉 연출 (F2) ──────────────────────────────────────────── */
+@keyframes pb-shake {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-9deg) scale(1.03); }
+  40% { transform: rotate(8deg) scale(1.05); }
+  60% { transform: rotate(-7deg) scale(1.07); }
+  80% { transform: rotate(6deg) scale(1.04); }
+}
+@keyframes pb-burst {
+  0% { transform: scale(0.2); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@keyframes pb-reveal {
+  0% { opacity: 0; transform: scale(0.4) translateY(20px); }
+  55% { opacity: 1; transform: scale(1.12) translateY(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes pb-glow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.15); }
+}
+.pb-shake { animation: pb-shake 0.5s ease-in-out infinite; }
+.pb-burst { animation: pb-burst 0.6s ease-out forwards; }
+.pb-reveal { animation: pb-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pb-glow { animation: pb-glow 1.6s ease-in-out infinite; }

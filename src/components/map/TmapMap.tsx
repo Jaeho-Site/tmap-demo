@@ -132,22 +132,31 @@ export const TmapMap = forwardRef<TmapMapHandle, TmapMapProps>(function TmapMap(
     }
   }, [courses])
 
-  // 목적 필터 → 폴리라인 표시/숨김 (재생성 없이)
+  // 베이스 폴리라인 가시성 — 선택 > 필터 단일 계산(두 이펙트가 서로 덮어쓰지 않도록 통합)
+  // 선택된 경로가 있으면 나머지 초록선은 전부 숨기고 라임 하이라이트만 노출,
+  // 선택 해제 시 목적 필터 규칙대로 전체/필터 폴리라인 복원.
+  // NOTE: TMAP은 폴리라인을 캔버스에 그려 setMap(null)로는 화면에서 지워지지 않는다.
+  //       반드시 setVisible(false)를 써야 실제로 숨겨진다.
   useEffect(() => {
-    const map = mapRef.current
-    if (!map) return
+    if (!mapRef.current) return
     linesRef.current.forEach((line, id) => {
-      const c = courseMap.get(id)
-      const show = !filterPurpose || (c ? c.purposes.includes(filterPurpose) : false)
-      line.setMap(show ? map : null)
+      let show: boolean
+      if (selectedId) {
+        show = false
+      } else {
+        const c = courseMap.get(id)
+        show = !filterPurpose || (c ? c.purposes.includes(filterPurpose) : false)
+      }
+      line.setVisible(show)
     })
-  }, [filterPurpose, courseMap])
+  }, [filterPurpose, selectedId, courseMap])
 
   // 선택 하이라이트(라임) — 위에 덧그림
   useEffect(() => {
     const map = mapRef.current
     const T = window.Tmapv2
     if (!map || !T) return
+    highlightRef.current?.setVisible(false) // 캔버스 잔상 제거(setMap(null)만으론 안 지워짐)
     highlightRef.current?.setMap(null)
     highlightRef.current = null
     if (!selectedId) return
@@ -184,6 +193,7 @@ export const TmapMap = forwardRef<TmapMapHandle, TmapMapProps>(function TmapMap(
     const map = mapRef.current
     const T = window.Tmapv2
     if (!map || !T) return
+    guideRef.current?.setVisible(false)
     guideRef.current?.setMap(null)
     guideRef.current = null
     if (!guidePath || guidePath.length < 2) return
@@ -201,6 +211,7 @@ export const TmapMap = forwardRef<TmapMapHandle, TmapMapProps>(function TmapMap(
     const map = mapRef.current
     const T = window.Tmapv2
     if (!map || !T) return
+    liveRef.current?.setVisible(false)
     liveRef.current?.setMap(null)
     liveRef.current = null
     if (!livePath || livePath.length < 2) return
