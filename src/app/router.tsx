@@ -5,6 +5,7 @@ import { HomePage } from '@/pages/HomePage'
 import { ExplorePage } from '@/pages/ExplorePage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { SavedPage } from '@/pages/SavedPage'
+import { PartnerPage } from '@/pages/PartnerPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { CourseDetailPage } from '@/pages/CourseDetailPage'
 import { WalkPage } from '@/pages/WalkPage'
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: 'explore', element: <ExplorePage /> },
       { path: 'history', element: <HistoryPage /> },
       { path: 'saved', element: <SavedPage /> },
+      { path: 'partner', element: <PartnerPage /> },
       { path: 'profile', element: <ProfilePage /> },
     ],
   },

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Map, Activity, Heart, User, type LucideIcon } from 'lucide-react'
+import { Home, Map, Activity, Heart, PawPrint, User, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface Tab {
@@ -14,6 +14,7 @@ const TABS: Tab[] = [
   { to: '/explore', label: '탐험', icon: Map },
   { to: '/history', label: '기록', icon: Activity },
   { to: '/saved', label: '저장', icon: Heart },
+  { to: '/partner', label: '파트너', icon: PawPrint },
   { to: '/profile', label: '프로필', icon: User },
 ]
 
