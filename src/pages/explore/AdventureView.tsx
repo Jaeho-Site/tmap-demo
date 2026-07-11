@@ -12,7 +12,8 @@ import {
   type TripType,
 } from '@/features/adventure/suggestRoute'
 import { saveWalk } from '@/features/history/records'
-import { useCustomRoutes, getCustomRoute, type CustomRoute } from '@/store/customRoutes'
+import { useCustomRoutes, type CustomRoute } from '@/store/customRoutes'
+import { getSharedById, type SharedRoute } from '@/features/community/sharedRoutes'
 import { DAEJEON_CENTER } from '@/config'
 import { TmapMap, type TmapMapHandle } from '@/components/map/TmapMap'
 import { MapControls } from '@/components/map/MapControls'
@@ -42,6 +43,7 @@ export function AdventureView({
   const saveRoute = useCustomRoutes((s) => s.save)
   const removeRoute = useCustomRoutes((s) => s.remove)
   const savedRoutes = useCustomRoutes((s) => s.routes)
+  const bumpUsage = useCustomRoutes((s) => s.bumpUsage)
 
   const [route, setRoute] = useState<SuggestedRoute | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -65,10 +67,10 @@ export function AdventureView({
   useEffect(() => {
     const routeId = params.get('route')
     if (routeId) {
-      const c = getCustomRoute(routeId)
-      if (c) {
-        setRoute(customToSuggested(c))
-        mapHandle.current?.panTo(c.path[Math.floor(c.path.length / 2)], 15)
+      const s = getSharedById(routeId)
+      if (s) {
+        setRoute(sharedToSuggested(s))
+        mapHandle.current?.panTo(s.path[Math.floor(s.path.length / 2)], 15)
       }
     } else if (params.get('ai') === '1') {
       setFormOpen(true)
@@ -132,7 +134,9 @@ export function AdventureView({
     session.start({ origin })
   }
   const startRoute = () => {
-    if (route) session.start({ guide: route.path, origin: route.path[0] })
+    if (!route) return
+    bumpUsage(route.id) // 저장·공유된 경로면 사용수 +1 (미저장 경로는 무영향)
+    session.start({ guide: route.path, origin: route.path[0] })
   }
   const cancelWalk = () => {
     session.cancel()
@@ -391,19 +395,20 @@ function suggestedToCustom(r: SuggestedRoute): CustomRoute {
     estMinutes: r.estMinutes,
     path: r.path,
     trip: r.trip,
+    shareStatus: 'private',
     createdAt: Date.now(),
   }
 }
-function customToSuggested(c: CustomRoute): SuggestedRoute {
+function sharedToSuggested(s: SharedRoute): SuggestedRoute {
   return {
-    id: c.id,
-    name: c.name,
-    distanceKm: c.distanceKm,
-    estMinutes: c.estMinutes,
-    trip: c.trip ?? 'round',
-    path: c.path,
-    waypoints: [c.path[0], c.path[Math.floor(c.path.length / 2)], c.path[c.path.length - 1]],
-    summary: c.kind === 'ai' ? '저장해 둔 AI 추천 경로예요.' : '저장해 둔 나의 산책 경로예요.',
+    id: s.id,
+    name: s.name,
+    distanceKm: s.distanceKm,
+    estMinutes: s.estMinutes,
+    trip: 'round',
+    path: s.path,
+    waypoints: [s.path[0], s.path[Math.floor(s.path.length / 2)], s.path[s.path.length - 1]],
+    summary: s.kind === 'ai' ? '저장해 둔 AI 추천 경로예요.' : '저장해 둔 나의 산책 경로예요.',
   }
 }
 

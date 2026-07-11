@@ -68,6 +68,7 @@ export function WalkCompletePage() {
       estMinutes: Math.max(1, Math.round(record.durationSec / 60)),
       path: record.track,
       trip: 'oneway',
+      shareStatus: 'private',
       createdAt: Date.now(),
     })
   }

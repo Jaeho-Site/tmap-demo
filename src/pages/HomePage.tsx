@@ -8,6 +8,8 @@ import {
   Footprints,
   Flame,
   ChevronRight,
+  TrendingUp,
+  Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -22,6 +24,7 @@ import { listWalks } from '@/features/history/records'
 import { computeStats } from '@/features/history/stats'
 import { useConditions } from '@/store/conditions'
 import { useSaved } from '@/store/saved'
+import { useRanking } from '@/features/community/sharedRoutes'
 import { useGeolocation } from '@/hooks/useGeolocation'
 import { DAEJEON_CENTER } from '@/config'
 import { PURPOSES } from '@/data/daejeonData'
@@ -92,6 +95,8 @@ export function HomePage() {
 
   const todaySteps = estimateSteps(stats.todayDistanceM)
   const todayKcal = estimateKcal(stats.todayDistanceM)
+
+  const ranking = useRanking(6)
 
   return (
     <div className="px-4 pt-4 pb-8">
@@ -231,6 +236,49 @@ export function HomePage() {
                     <span>{c.estMinutes}분</span>
                   </div>
                 </div>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* 인기 공유 산책로 (F4) */}
+      {ranking.length > 0 && (
+        <>
+          <div className="mt-6 mb-2 flex items-center gap-1.5">
+            <TrendingUp size={16} className="text-primary" />
+            <p className="text-sm font-bold text-fg-muted">인기 공유 산책로</p>
+          </div>
+          <div className="space-y-2">
+            {ranking.map((r, i) => (
+              <button
+                key={r.id}
+                onClick={() => navigate(`/explore?view=adventure&route=${encodeURIComponent(r.id)}`)}
+                className="flex w-full items-center gap-3 rounded-2xl bg-surface p-3 text-left active:brightness-110"
+              >
+                <span
+                  className={`w-6 shrink-0 text-center text-lg font-extrabold tabular-nums ${
+                    i < 3 ? 'text-primary' : 'text-fg-muted'
+                  }`}
+                >
+                  {i + 1}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-extrabold">{r.name}</p>
+                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-fg-muted">
+                    <span>{r.kind === 'ai' ? 'AI 경로' : '자유 산책'}</span>
+                    <span>·</span>
+                    <span>{formatDistance(r.distanceKm)}</span>
+                    <span>·</span>
+                    <span>약 {r.estMinutes}분</span>
+                    <span>·</span>
+                    <span className="truncate">{r.authorName}</span>
+                  </div>
+                </div>
+                <span className="flex shrink-0 items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-bold text-fg-muted">
+                  <Users size={12} />
+                  {r.usageCount.toLocaleString()}
+                </span>
               </button>
             ))}
           </div>
